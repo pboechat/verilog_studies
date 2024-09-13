@@ -1,16 +1,15 @@
 `include "clock_divider.vl"
 
 module clock_divider_tb;
-    reg sqr_wave;
+    reg clk_val;
     wire clk, tenth_clk, hundredth_clk, thousandth_clk;
 
-    initial
-    begin
-        sqr_wave = 0;
+    initial begin
+        clk_val = 0;
     end
 
-    always #1 sqr_wave = ~sqr_wave;
-    assign clk = sqr_wave;
+    always #1 clk_val = ~clk_val;
+    assign clk = clk_val;
 
     clock_divider divider_1(
         .in_hz(clk), 
@@ -28,8 +27,7 @@ module clock_divider_tb;
         .out_hz(thousandth_clk)
     );
 
-    initial
-    begin
+    initial begin
         #10;
         $display("[%t] clk = %b, tenth_clk = %b, hundredth_clk = %b, thousandth_clk = %b", $time, clk, tenth_clk, hundredth_clk, thousandth_clk);
 

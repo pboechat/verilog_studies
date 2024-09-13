@@ -1,7 +1,7 @@
 module clock_divider(in_hz, max_count, out_hz);
-    input in_hz;
-    input [31:0] max_count;
-    output out_hz;
+    input wire in_hz;
+    input wire [31:0] max_count;
+    output wire out_hz;
 
     reg sqr_wave;
     reg [31:0] count;

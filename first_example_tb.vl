@@ -9,29 +9,27 @@ module first_example_tb;
     .LEDR(LEDR)
   );
 
-  initial
-  begin
+  initial begin
     KEY = 2'b00;
 
-    #10
+    #1;
 
     KEY = 2'b01;
 
-    #10;
+    #1;
 
     KEY = 2'b10;
 
-    #10;
+    #1;
 
     KEY = 2'b11;
 
-    #10;
+    #1;
 
     $finish;
   end
 
-  initial
-  begin
+  initial begin
     $monitor("At time %t, KEY = %b, LEDR = %b", $time, KEY, LEDR);
   end
 endmodule

@@ -1,0 +1,49 @@
+`include "d_flip_flop.vl"
+
+module d_flip_flop_tb;
+    reg clk_val, set_val;
+    wire clk, set, out;
+
+    initial begin
+        clk_val = 0;
+    end
+
+    always #1 clk_val = ~clk_val;
+    assign clk = clk_val;
+    assign set = set_val;
+
+    d_flip_flop d_ff(
+        .clk(clk),
+        .set(set),
+        .out(out)
+    );
+
+    initial begin
+        $display("%b", out);
+
+        #2;
+
+        // set 0
+        set_val = 0;
+
+        #2;
+
+        $display("%b", out);
+
+        // set 1
+        set_val = 1;
+        
+        #2;
+
+        $display("%b", out);
+
+        // set 0
+        set_val = 0;
+        
+        #2;
+        
+        $display("%b", out);
+
+        $finish;
+    end
+endmodule

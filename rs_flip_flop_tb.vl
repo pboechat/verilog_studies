@@ -1,0 +1,56 @@
+`include "rs_flip_flop.vl"
+
+module rs_flip_flop_tb;
+    reg set_val, reset_val;
+    wire set, reset, out_df, out_bh;
+
+    assign set = set_val;
+    assign reset = reset_val;
+
+    rs_flip_flop_df rs_ff_df(
+        .set(set),
+        .reset(reset),
+        .out(out_df)
+    );
+
+    rs_flip_flop_bh rs_ff_bh(
+        .set(set),
+        .reset(reset),
+        .out(out_bh)
+    );
+
+    initial begin
+        $display("[df] %b", out_df);
+        $display("[bh] %b", out_bh);
+
+        #1;
+
+        // reset
+        set_val = 1;
+        reset_val = 0;
+
+        #1;
+
+        $display("[df] %b", out_df);
+        $display("[bh] %b", out_bh);
+
+        // set
+        set_val = 0;
+        
+        #1;
+
+        $display("[df] %b", out_df);
+        $display("[bh] %b", out_bh);
+
+        // reset again
+        set_val = 1;
+        reset_val = 0;
+        
+        #1;
+        
+        $display("[df] %b", out_df);
+        $display("[bh] %b", out_bh);
+
+        $finish;
+    end
+endmodule
