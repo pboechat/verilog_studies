@@ -1,7 +1,6 @@
 `include "first_example.vl"
 
-module tb_first_example;
-
+module first_example_tb;
   reg [1:0] KEY;
   wire [9:0] LEDR;
 
@@ -35,5 +34,4 @@ module tb_first_example;
   begin
     $monitor("At time %t, KEY = %b, LEDR = %b", $time, KEY, LEDR);
   end
-
 endmodule

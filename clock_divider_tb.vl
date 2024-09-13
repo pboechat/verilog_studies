@@ -1,0 +1,48 @@
+`include "clock_divider.vl"
+
+module clock_divider_tb;
+    reg sqr_wave;
+    wire clk, tenth_clk, hundredth_clk, thousandth_clk;
+
+    initial
+    begin
+        sqr_wave = 0;
+    end
+
+    always #1 sqr_wave = ~sqr_wave;
+    assign clk = sqr_wave;
+
+    clock_divider divider_1(
+        .in_hz(clk), 
+        .max_count(10), 
+        .out_hz(tenth_clk)
+    );
+    clock_divider divider_2(
+        .in_hz(tenth_clk), 
+        .max_count(10), 
+        .out_hz(hundredth_clk)
+    );
+    clock_divider divider_3(
+        .in_hz(hundredth_clk), 
+        .max_count(10), 
+        .out_hz(thousandth_clk)
+    );
+
+    initial
+    begin
+        #10;
+        $display("[%t] clk = %b, tenth_clk = %b, hundredth_clk = %b, thousandth_clk = %b", $time, clk, tenth_clk, hundredth_clk, thousandth_clk);
+
+        #10;
+        $display("[%t] clk = %b, tenth_clk = %b, hundredth_clk = %b, thousandth_clk = %b", $time, clk, tenth_clk, hundredth_clk, thousandth_clk);
+
+        #180;
+        $display("[%t] clk = %b, tenth_clk = %b, hundredth_clk = %b, thousandth_clk = %b", $time, clk, tenth_clk, hundredth_clk, thousandth_clk);
+
+        #1800;
+        $display("[%t] clk = %b, tenth_clk = %b, hundredth_clk = %b, thousandth_clk = %b", $time, clk, tenth_clk, hundredth_clk, thousandth_clk);
+        
+        #1;
+        $finish;
+    end
+endmodule
