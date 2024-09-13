@@ -1,0 +1,16 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch VVP",
+            "type": "node",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "runtimeExecutable": "vvp",
+            "args": [
+                "${workspaceFolder}/build/${fileBasenameNoExtension}.vvp"
+            ]
+        }
+    ]
+}

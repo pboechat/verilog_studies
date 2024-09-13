@@ -1,0 +1,5 @@
+module first_example(KEY, LEDR);
+  input [1:0] KEY;
+  output [9:0] LEDR;
+  assign LEDR[0] = KEY[0] & KEY[1];
+endmodule

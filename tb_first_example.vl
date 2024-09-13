@@ -1,0 +1,39 @@
+`include "first_example.vl"
+
+module tb_first_example;
+
+  reg [1:0] KEY;
+  wire [9:0] LEDR;
+
+  first_example uut(
+    .KEY(KEY),
+    .LEDR(LEDR)
+  );
+
+  initial
+  begin
+    KEY = 2'b00;
+
+    #10
+
+    KEY = 2'b01;
+
+    #10;
+
+    KEY = 2'b10;
+
+    #10;
+
+    KEY = 2'b11;
+
+    #10;
+
+    $finish;
+  end
+
+  initial
+  begin
+    $monitor("At time %t, KEY = %b, LEDR = %b", $time, KEY, LEDR);
+  end
+
+endmodule
