@@ -9,8 +9,10 @@
             "console": "integratedTerminal",
             "runtimeExecutable": "vvp",
             "args": [
-                "${workspaceFolder}/build/${fileBasenameNoExtension}.vvp"
-            ]
+                "${workspaceFolder}/build/${relativeFileDirname}/${fileBasenameNoExtension}.vvp"
+            ],
+            "outputCapture": "std",
+            "stopOnEntry": false
         }
     ]
 }

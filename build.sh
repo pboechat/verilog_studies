@@ -8,6 +8,7 @@ print_help() {
     echo "Options:"
     echo "  -h, --help      print help"
 }
+
 for arg in "$@"; do
     case "$1" in
         -h|--help)
@@ -21,14 +22,25 @@ for arg in "$@"; do
     esac
 done
 
-mkdir -p "$script_dir"
+if ! command -v iverilog >/dev/null 2>&1; then
+    echo "iverilog is not available"
+    exit 1
+fi
 
 extra_args=()
 
 set -e
 
-for file in "$script_dir"/*.vl; do
-    iverilog "${extra_args[@]}" -o "$script_dir/build/$(basename "$file" .vl).vvp" "$file"; 
+for file in $(find "$script_dir" -type f -name "*.v"); do
+    echo Building $file
+    src_dir=$(dirname "$file")
+    src=$(basename "$file")
+    dst_dir=$script_dir/build/$(realpath --relative-to="$script_dir" "$src_dir")
+    mkdir -p $dst_dir > /dev/null 2>&1
+    dst="$dst_dir/$(basename "$file" .v).vvp"
+    pushd $src_dir > /dev/null 2>&1
+    iverilog "${extra_args[@]}" -o "$dst" "$src";
+    popd > /dev/null 2>&1
 done
 
 echo "Built all successfully."

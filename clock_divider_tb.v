@@ -1,4 +1,4 @@
-`include "clock_divider.vl"
+`include "clock_divider.v"
 
 module clock_divider_tb;
     reg clk_val;

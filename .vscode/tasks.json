@@ -9,6 +9,11 @@
                 "kind": "build",
                 "isDefault": true
             }
+        },
+        {
+            "label": "Clean",
+            "type": "shell",
+            "command": "${workspaceFolder}/clean.sh",
         }
     ]
 }

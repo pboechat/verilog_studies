@@ -1,4 +1,4 @@
-`include "d_flip_flop.vl"
+`include "d_flip_flop.v"
 
 module d_flip_flop_tb;
     reg clk_val, set_val;

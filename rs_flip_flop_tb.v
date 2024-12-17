@@ -1,4 +1,4 @@
-`include "rs_flip_flop.vl"
+`include "rs_flip_flop.v"
 
 module rs_flip_flop_tb;
     reg set_val, reset_val;

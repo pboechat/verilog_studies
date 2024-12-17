@@ -1,4 +1,4 @@
-`include "first_example.vl"
+`include "first_example.v"
 
 module first_example_tb;
   reg [1:0] KEY;
