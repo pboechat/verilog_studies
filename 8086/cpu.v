@@ -1,48 +1,89 @@
 `include "isa.vh"
 
-module cpu(clk, reset, mem, data_in, data_out);
+module cpu(clk, reset, irq, mem, data_in, data_out);
     input wire clk;
     input wire reset;
+    input wire[7:0] irq;
     input wire [2047:0] mem;
     input wire [7:0] data_in;
     output reg [7:0] data_out;
 
-    reg run;
+    reg run_flg;
+    reg int_flg;
+    reg[7:0] ret_ptr;
+    reg[2:0] ret_flgs; // {int_flg,C_flg,A_flg}
     reg[7:0] IP;
     reg[7:0] AL;
+    reg C_flg; // carry flag
+    reg A_flg; // aux carry flag
 
     always@(posedge(clk))
     begin
         if (reset) 
         begin
-            IP <= 0;
+            IP <= `PROG_START;
             AL <= 0;
-            run <= 1;
+            run_flg <= 1;
+            int_flg <= 1;
         end 
         else 
         begin
-            if (run) 
+            if (irq) // hardware interrupt request
             begin
-                case (mem[(IP * 8) +: 8])
-                    `HLT:
-                    begin
-                        run <= 0;
-                    end
-                    `IN:
-                    begin
-                        AL <= data_in[7:0];
-                        IP <= IP + 1;
-                    end
-                    `NOP:
-                    begin
-                        IP <= IP + 1;
-                    end
-                    `OUT:
-                    begin
-                        data_out <= AL;
-                        IP <= IP + 1;
-                    end
-                endcase
+                $display("[cpu        ] - T(%t) - IRQ(h%h)", $time, irq);
+                ret_ptr <= IP;
+                IP <= irq;
+                ret_flgs <= {int_flg, C_flg, A_flg};
+                int_flg <= 0;
+            end
+            else
+            begin
+                if (run_flg) 
+                begin
+                    case (mem[IP +: 8])
+                        `HLT:
+                        begin
+                            $display("[cpu        ] - T(%t) - IP(h%h) - HLT", $time, IP);
+                            run_flg <= 0;
+                        end
+                        `IN:
+                        begin
+                            $display("[cpu        ] - T(%t) - IP(h%h) - IN", $time, IP);
+                            AL <= data_in;
+                            IP <= IP + 8;
+                        end
+                        `INT: // software interrupt request
+                        begin
+                            $display("[cpu        ] - T(%t) - IP(h%h) - INT", $time, IP);
+                            ret_ptr <= IP;
+                            IP <= `PROG_START; // go back to program start
+                            ret_flgs <= {int_flg, C_flg, A_flg};
+                            int_flg <= 0;
+                        end
+                        `IRET:
+                        begin
+                            $display("[cpu        ] - T(%t) - IP(h%h) - IRET", $time, IP);
+                            {int_flg, C_flg, A_flg} <= ret_flgs;
+                            IP <= ret_ptr;
+                        end
+                        `NOP:
+                        begin
+                            $display("[cpu        ] - T(%t) - IP(h%h) - NOP", $time, IP);
+                            IP <= IP + 8;
+                        end
+                        `OUT:
+                        begin
+                            $display("[cpu        ] - T(%t) - IP(h%h) - OUT", $time, IP);
+                            data_out <= AL;
+                            IP <= IP + 8;
+                        end
+                        default: // undefined instruction
+                        begin
+                            $display("[cpu        ] - T(%t) - IP(h%h) - UI(%d)", $time, IP, mem[IP +: 8]);
+                            IP <= `UII;
+                        end
+                    endcase
+                end
             end
         end
     end
