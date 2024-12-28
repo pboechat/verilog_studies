@@ -21,6 +21,7 @@ module cpu(clk, reset, irq, mem, data_in, data_out);
     begin
         if (reset) 
         begin
+            $display("[cpu        ] - T(%t) - RESET", $time);
             IP <= `PROG_START;
             `AL <= 0;
             run_flg <= 1;
@@ -113,6 +114,29 @@ module cpu(clk, reset, irq, mem, data_in, data_out);
                             `AX <= `AX - 1;
                             IP <= IP + 8;
                         end
+                        `NOP:
+                        begin
+                            $display("[cpu        ] - T(%t) - IP(h%h) - NOP", $time, IP);
+                            IP <= IP + 8;
+                        end
+                        `CBW:
+                        begin
+                            $display("[cpu        ] - T(%t) - IP(h%h) - CBW", $time, IP);
+                            `AH <= `AX[7] ? 8'hFF : 0;
+                            IP <= IP + 8;
+                        end
+                        `MOVB:
+                        begin
+                            $display("[cpu        ] - T(%t) - IP(h%h) - MOVB", $time, IP);
+                            `AL <= mem[IP + 8 +: 8];
+                            IP <= IP + 16;
+                        end
+                        `MOVW:
+                        begin
+                            $display("[cpu        ] - T(%t) - IP(h%h) - MOVW", $time, IP);
+                            `AX <= {mem[IP + 16 +: 8], mem[IP + 8 +: 8]};
+                            IP <= IP + 24;
+                        end
                         `HLT:
                         begin
                             $display("[cpu        ] - T(%t) - IP(h%h) - HLT", $time, IP);
@@ -138,17 +162,6 @@ module cpu(clk, reset, irq, mem, data_in, data_out);
                             {int_flg, C_flg, A_flg} <= ret_flgs;
                             IP <= ret_ptr;
                         end
-                        `NOP:
-                        begin
-                            $display("[cpu        ] - T(%t) - IP(h%h) - NOP", $time, IP);
-                            IP <= IP + 8;
-                        end
-                        `CBW:
-                        begin
-                            $display("[cpu        ] - T(%t) - IP(h%h) - CBW", $time, IP);
-                            `AH <= `AX[7] ? 8'hFF : 0;
-                            IP <= IP + 8;
-                        end
                         `OUT:
                         begin
                             $display("[cpu        ] - T(%t) - IP(h%h) - OUT", $time, IP);
@@ -157,7 +170,7 @@ module cpu(clk, reset, irq, mem, data_in, data_out);
                         end
                         default: // undefined instruction
                         begin
-                            $display("[cpu        ] - T(%t) - IP(h%h) - UI(%d)", $time, IP, mem[IP +: 8]);
+                            $display("[cpu        ] - T(%t) - IP(h%h) - UI(b%b)", $time, IP, mem[IP +: 8]);
                             IP <= `UII;
                         end
                     endcase

@@ -11,12 +11,14 @@
 `define XORW 8'b00110101        // XOR AX with immediate (word)
 `define INC  8'b01000000        // INCrement AX by one
 `define DEC  8'b01001000        // DECrement AX by one
+`define NOP  8'b10010000        // No-OP
+`define CBW  8'b10011000        // Convert accumulator from Byte to Word by filling AH with the sign bit of AL
+`define MOVB 8'b10110000        // MOVe immediate (byte) to AL
+`define MOVW 8'b10111000        // MOVe immediate (word) to AX
 `define HLT  8'b11110100        // HaLT the CPU execution
 `define IN   8'b11101100        // read from the data INput channel to AX
 `define INT  8'b11001100        // raise a software INTerrupt
 `define IRET 8'b11001111        // RETurn from an Interrupt handler
-`define NOP  8'b10010000        // No-OP
-`define CBW  8'b10011000        // Convert accumulator from Byte to Word by filling AH with the sign bit of AL
 `define OUT  8'b11101110        // write AL to the data OUTput channel
 // registers
 `define AX reg_file[0]          // Accumulator eXtended register
