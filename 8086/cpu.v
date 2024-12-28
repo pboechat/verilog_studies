@@ -8,27 +8,27 @@ module cpu(clk, reset, irq, mem, data_in, data_out);
     input wire [7:0] data_in;
     output reg [7:0] data_out;
 
-    reg run_flg;
-    reg int_flg;
-    reg[7:0] ret_ptr;
-    reg[2:0] ret_flgs; // {int_flg,C_flg,A_flg}
-    reg[7:0] IP;
-    reg[7:0] AL;
-    reg C_flg; // carry flag
-    reg A_flg; // aux carry flag
+    reg run_flg;                // run flag
+    reg int_flg;                // interrupt flag
+    reg C_flg;                  // carry flag
+    reg A_flg;                  // aux carry flag
+    reg[7:0] ret_ptr;           // return pointer
+    reg[2:0] ret_flgs;          // {int_flg,C_flg,A_flg}
+    reg[7:0] IP;                // instruction pointer
+    reg[15:0] reg_file[0:31];   // register file
 
     always@(posedge(clk))
     begin
         if (reset) 
         begin
             IP <= `PROG_START;
-            AL <= 0;
+            `AL <= 0;
             run_flg <= 1;
             int_flg <= 1;
         end 
         else 
         begin
-            if (irq) // hardware interrupt request
+            if (irq) // IRQ
             begin
                 $display("[cpu        ] - T(%t) - IRQ(h%h)", $time, irq);
                 ret_ptr <= IP;
@@ -41,6 +41,78 @@ module cpu(clk, reset, irq, mem, data_in, data_out);
                 if (run_flg) 
                 begin
                     case (mem[IP +: 8])
+                        `ADDB:
+                        begin
+                            $display("[cpu        ] - T(%t) - IP(h%h) - ADDB", $time, IP);
+                            `AL <= `AL + mem[IP + 8 +: 8];
+                            IP <= IP + 16;
+                        end
+                        `ADDW:
+                        begin
+                            $display("[cpu        ] - T(%t) - IP(h%h) - ADDW", $time, IP);
+                            `AX <= `AX + {mem[IP + 16 +: 8], mem[IP + 8 +: 8]};
+                            IP <= IP + 24;
+                        end
+                        `ORB:
+                        begin
+                            $display("[cpu        ] - T(%t) - IP(h%h) - ORB", $time, IP);
+                            `AL <= `AL | mem[IP + 8 +: 8];
+                            IP <= IP + 16;
+                        end
+                        `ADDW:
+                        begin
+                            $display("[cpu        ] - T(%t) - IP(h%h) - ORW", $time, IP);
+                            `AX <= `AX | {mem[IP + 16 +: 8], mem[IP + 8 +: 8]};
+                            IP <= IP + 24;
+                        end
+                        `ANDB:
+                        begin
+                            $display("[cpu        ] - T(%t) - IP(h%h) - ANDB", $time, IP);
+                            `AL <= `AL & mem[IP + 8 +: 8];
+                            IP <= IP + 16;
+                        end
+                        `ANDW:
+                        begin
+                            $display("[cpu        ] - T(%t) - IP(h%h) - ANDW", $time, IP);
+                            `AX <= `AX & {mem[IP + 16 +: 8], mem[IP + 8 +: 8]};
+                            IP <= IP + 24;
+                        end
+                        `SUBB:
+                        begin
+                            $display("[cpu        ] - T(%t) - IP(h%h) - SUBB", $time, IP);
+                            `AL <= `AL - mem[IP + 8 +: 8];
+                            IP <= IP + 16;
+                        end
+                        `SUBW:
+                        begin
+                            $display("[cpu        ] - T(%t) - IP(h%h) - SUBW", $time, IP);
+                            `AX <= `AX - {mem[IP + 16 +: 8], mem[IP + 8 +: 8]};
+                            IP <= IP + 24;
+                        end
+                        `XORB:
+                        begin
+                            $display("[cpu        ] - T(%t) - IP(h%h) - XORB", $time, IP);
+                            `AL <= `AL ^ mem[IP + 8 +: 8];
+                            IP <= IP + 16;
+                        end
+                        `XORW:
+                        begin
+                            $display("[cpu        ] - T(%t) - IP(h%h) - XORW", $time, IP);
+                            `AX <= `AX ^ {mem[IP + 16 +: 8], mem[IP + 8 +: 8]};
+                            IP <= IP + 24;
+                        end
+                        `INC:
+                        begin
+                            $display("[cpu        ] - T(%t) - IP(h%h) - INC", $time, IP);
+                            `AX <= `AX + 1;
+                            IP <= IP + 8;
+                        end
+                        `DEC:
+                        begin
+                            $display("[cpu        ] - T(%t) - IP(h%h) - DEC", $time, IP);
+                            `AX <= `AX - 1;
+                            IP <= IP + 8;
+                        end
                         `HLT:
                         begin
                             $display("[cpu        ] - T(%t) - IP(h%h) - HLT", $time, IP);
@@ -49,14 +121,14 @@ module cpu(clk, reset, irq, mem, data_in, data_out);
                         `IN:
                         begin
                             $display("[cpu        ] - T(%t) - IP(h%h) - IN", $time, IP);
-                            AL <= data_in;
+                            `AL <= data_in;
                             IP <= IP + 8;
                         end
                         `INT: // software interrupt request
                         begin
                             $display("[cpu        ] - T(%t) - IP(h%h) - INT", $time, IP);
                             ret_ptr <= IP;
-                            IP <= `PROG_START; // go back to program start
+                            IP <= `PROG_START; // FIXME: for now, go back to program start
                             ret_flgs <= {int_flg, C_flg, A_flg};
                             int_flg <= 0;
                         end
@@ -71,10 +143,16 @@ module cpu(clk, reset, irq, mem, data_in, data_out);
                             $display("[cpu        ] - T(%t) - IP(h%h) - NOP", $time, IP);
                             IP <= IP + 8;
                         end
+                        `CBW:
+                        begin
+                            $display("[cpu        ] - T(%t) - IP(h%h) - CBW", $time, IP);
+                            `AH <= `AX[7] ? 8'hFF : 0;
+                            IP <= IP + 8;
+                        end
                         `OUT:
                         begin
                             $display("[cpu        ] - T(%t) - IP(h%h) - OUT", $time, IP);
-                            data_out <= AL;
+                            data_out <= `AL;
                             IP <= IP + 8;
                         end
                         default: // undefined instruction
