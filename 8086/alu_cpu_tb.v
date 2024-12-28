@@ -181,8 +181,34 @@ module alu_cpu_tb;
         #10; // run for 5 cycles
 
         // query data output channel
-        $display("[cpu_tb     ] - T(%t) - data_out(%h), expected(%h)", $time, data_out, 8'h2B);
+        $display("[cpu_tb     ] - T(%t) - data_out(h%h), expected(h%h)", $time, data_out, 8'h2B);
         if (data_out != 8'h2B)
+        begin
+            $stop;
+        end
+
+        // reset
+        reset_val = 1'b1;
+
+        #2; // run for 1 cycle
+
+        // zero reset
+        reset_val = 1'b0;
+
+        // setup program
+        assign mem[`PROG_START + 00 +: 8] = `IN;            // read from data input channel into AL
+        assign mem[`PROG_START + 08 +: 8] = `CBW;           // fill AH with AL sign bit
+        assign mem[`PROG_START + 16 +: 8] = `DEC;           // decrement AX
+        assign mem[`PROG_START + 24 +: 8] = `OUT;           // write AL to data output channel
+        assign mem[`PROG_START + 32 +: 8] = 0;              // raise an UII
+
+        assign data_in = 8'h2A; // set data input channel
+
+        #10; // run for 5 cycles
+
+        // query data output channel
+        $display("[cpu_tb     ] - T(%t) - data_out(h%h), expected(h%h)", $time, data_out, 8'h29);
+        if (data_out != 8'h29)
         begin
             $stop;
         end
