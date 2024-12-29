@@ -5,7 +5,7 @@
 module alu_cpu_tb;
     reg clk_val, reset_val;
     wire clk, reset;
-    reg[2047:0] mem;
+    reg[255:0] mem;
     reg[7:0] data_in;
     wire[7:0] data_out;
 
@@ -172,7 +172,7 @@ module alu_cpu_tb;
         // setup program
         assign mem[`PROG_START + 00 +: 8] = `IN;            // read from data input channel into AL
         assign mem[`PROG_START + 08 +: 8] = `CBW;           // fill AH with AL sign bit
-        assign mem[`PROG_START + 16 +: 8] = `INC;           // increment AX
+        assign mem[`PROG_START + 16 +: 8] = `INCW | `AX_ID; // increment AX
         assign mem[`PROG_START + 24 +: 8] = `OUT;           // write AL to data output channel
         assign mem[`PROG_START + 32 +: 8] = 0;              // raise an UII
 
@@ -198,7 +198,7 @@ module alu_cpu_tb;
         // setup program
         assign mem[`PROG_START + 00 +: 8] = `IN;            // read from data input channel into AL
         assign mem[`PROG_START + 08 +: 8] = `CBW;           // fill AH with AL sign bit
-        assign mem[`PROG_START + 16 +: 8] = `DEC;           // decrement AX
+        assign mem[`PROG_START + 16 +: 8] = `DECW | `AX_ID; // decrement AX
         assign mem[`PROG_START + 24 +: 8] = `OUT;           // write AL to data output channel
         assign mem[`PROG_START + 32 +: 8] = 0;              // raise an UII
 
@@ -209,6 +209,62 @@ module alu_cpu_tb;
         // query data output channel
         $display("[cpu_tb     ] - T(%t) - data_out(h%h), expected(h%h)", $time, data_out, 8'h29);
         if (data_out != 8'h29)
+        begin
+            $stop;
+        end
+
+        // reset
+        reset_val = 1'b1;
+
+        #2; // run for 1 cycle
+
+        // zero reset
+        reset_val = 1'b0;
+
+        // setup program
+        assign mem[`PROG_START + 00 +: 8] = `IN;                // read from data input channel into AL
+        assign mem[`PROG_START + 08 +: 8] = `MOVB | `CL_ID;     // move 8-bit immediate to CL
+        assign mem[`PROG_START + 16 +: 8] = 8'h02;              // 8-bit immediate
+        assign mem[`PROG_START + 24 +: 8] = `MULB;              // multiply (byte)
+        assign mem[`PROG_START + 32 +: 8] = {5'b11100, `CL_ID}; // AX <= AL * CL
+        assign mem[`PROG_START + 40 +: 8] = `OUT;               // write AL to data output channel
+        assign mem[`PROG_START + 48 +: 8] = 0;                  // raise an UII
+
+        assign data_in = 8'h08; // set data input channel
+
+        #12; // run for 6 cycles
+
+        // query data output channel
+        $display("[cpu_tb     ] - T(%t) - data_out(h%h), expected(h%h)", $time, data_out, 8'h10);
+        if (data_out != 8'h10)
+        begin
+            $stop;
+        end
+
+        // reset
+        reset_val = 1'b1;
+
+        #2; // run for 1 cycle
+
+        // zero reset
+        reset_val = 1'b0;
+
+        // setup program
+        assign mem[`PROG_START + 00 +: 8] = `IN;                // read from data input channel into AL
+        assign mem[`PROG_START + 08 +: 8] = `MOVB | `CL_ID;     // move 8-bit immediate to CL
+        assign mem[`PROG_START + 16 +: 8] = 8'h02;              // 8-bit immediate
+        assign mem[`PROG_START + 24 +: 8] = `MULW;              // multiply (word)
+        assign mem[`PROG_START + 32 +: 8] = {5'b11100, `CL_ID}; // AX <= AL * CL
+        assign mem[`PROG_START + 40 +: 8] = `OUT;               // write AL to data output channel
+        assign mem[`PROG_START + 48 +: 8] = 0;                  // raise an UII
+
+        assign data_in = 8'h81; // set data input channel
+
+        #12; // run for 6 cycles
+
+        // query data output channel
+        $display("[cpu_tb     ] - T(%t) - data_out(h%h), expected(h%h)", $time, data_out, 8'h02);
+        if (data_out != 8'h02)
         begin
             $stop;
         end

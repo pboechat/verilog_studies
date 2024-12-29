@@ -2,12 +2,12 @@
 `include "isa.vh"
 
 // testbed for IN/OUT and IRQ
-module in_out_cpu_tb;
+module in_out_irq_cpu_tb;
     reg clk_val, reset_val;
     reg [7:0] irq_val;
     wire clk, reset;
     wire [7:0] irq;
-    reg[2047:0] mem;
+    reg[255:0] mem;
     reg[7:0] data_in;
     wire[7:0] data_out;
 
@@ -25,8 +25,8 @@ module in_out_cpu_tb;
     assign irq = irq_val;
 
     cpu cpu_1(
-        .clk(clk), 
-        .reset(reset), 
+        .clk(clk),
+        .reset(reset),
         .irq(irq),
         .mem(mem),
         .data_in(data_in),
@@ -38,7 +38,7 @@ module in_out_cpu_tb;
         // setup handlers
         assign mem[`MEM_START +: 8] = `HLT;   // handle invalid flow by halting the CPU
         assign mem[`UII       +: 8] = `HLT;   // handle UII by halting the CPU execution
-        assign mem[8'h20      +: 8] = `IRET;  // return from an arbitrary IRQ h20
+        assign mem[16'h0020   +: 8] = `IRET;  // return from an arbitrary IRQ h20
         
         // set clock high
         clk_val = 1'b0;
@@ -52,15 +52,15 @@ module in_out_cpu_tb;
         reset_val = 1'b0;
         
         // setup program
-        assign mem[`PROG_START + 00 +: 8] = `IN;    // read from data input channel
-        assign mem[`PROG_START + +8 +: 8] = `OUT;   // write to data output channel
+        assign mem[`PROG_START + 00 +: 8] = `IN;    // read data input channel into AL
+        assign mem[`PROG_START + 08 +: 8] = `OUT;   // write AL to data output channel
         assign mem[`PROG_START + 16 +: 8] = 0;      // raise an UII
 
         assign data_in = 8'h2A; // set data input channel
 
-        #2 irq_val = 8'h20; // run for 1 cycle and set IRQ channel to h20
+        #2 irq_val = 16'h0020; // run for 1 cycle and set IRQ channel to h0020
 
-        #2 irq_val = 8'h00; // run for 1 cycle and clear IRQ channel
+        #2 irq_val = 16'h0000; // run for 1 cycle and clear IRQ channel
 
         #8; // run for 4 cycles
 
@@ -70,7 +70,6 @@ module in_out_cpu_tb;
         begin
             $stop;
         end
-        else
 
         $finish;
     end

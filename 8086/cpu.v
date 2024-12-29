@@ -4,7 +4,7 @@ module cpu(clk, reset, irq, mem, data_in, data_out);
     input wire clk;
     input wire reset;
     input wire[7:0] irq;
-    input wire [2047:0] mem;
+    input wire [255:0] mem;
     input wire [7:0] data_in;
     output reg [7:0] data_out;
 
@@ -41,7 +41,7 @@ module cpu(clk, reset, irq, mem, data_in, data_out);
             begin
                 if (run_flg) 
                 begin
-                    case (mem[IP +: 8])
+                    casez (mem[IP +: 8])
                         `ADDB:
                         begin
                             $display("[cpu        ] - T(%t) - IP(h%h) - ADDB", $time, IP);
@@ -102,17 +102,39 @@ module cpu(clk, reset, irq, mem, data_in, data_out);
                             `AX <= `AX ^ {mem[IP + 16 +: 8], mem[IP + 8 +: 8]};
                             IP <= IP + 24;
                         end
-                        `INC:
+                        `INCW_PFX:
                         begin
-                            $display("[cpu        ] - T(%t) - IP(h%h) - INC", $time, IP);
-                            `AX <= `AX + 1;
+                            $display("[cpu        ] - T(%t) - IP(h%h) - INCW???", $time, IP);
+                            reg_file[mem[IP +: 2]] <= reg_file[mem[IP +: 2]] + 1;
                             IP <= IP + 8;
                         end
-                        `DEC:
+                        `DECW_PFX:
                         begin
-                            $display("[cpu        ] - T(%t) - IP(h%h) - DEC", $time, IP);
-                            `AX <= `AX - 1;
+                            $display("[cpu        ] - T(%t) - IP(h%h) - DECW???", $time, IP);
+                            reg_file[mem[IP +: 2]] <= reg_file[mem[IP +: 2]] - 1;
                             IP <= IP + 8;
+                        end
+                        `MOVRB:
+                        begin
+                            $display("[cpu        ] - T(%t) - IP(h%h) - MOVRB", $time, IP);
+                            if (mem[IP + 14 +: 2] != 2'b11) 
+                            begin 
+                                $display("ERROR: invalid MOVRB mode (b%b)", mem[IP + 14 +: 2]); 
+                                $stop;
+                            end
+                            reg_file[mem[IP + 8 +: 3]][7:0] <= reg_file[mem[IP + 11 +: 3]][7:0];
+                            IP <= IP + 16;
+                        end
+                        `MOVRW:
+                        begin
+                            $display("[cpu        ] - T(%t) - IP(h%h) - MOVRW", $time, IP);
+                            if (mem[IP + 14 +: 2] != 2'b11) 
+                            begin 
+                                $display("ERROR: invalid MOVRW mode (b%b)", mem[IP + 14 +: 2]); 
+                                $stop;
+                            end
+                            reg_file[mem[IP + 8 +: 3]] <= reg_file[mem[IP + 11 +: 3]];
+                            IP <= IP + 16;
                         end
                         `NOP:
                         begin
@@ -125,28 +147,17 @@ module cpu(clk, reset, irq, mem, data_in, data_out);
                             `AH <= `AX[7] ? 8'hFF : 0;
                             IP <= IP + 8;
                         end
-                        `MOVB:
+                        `MOVB_PFX:
                         begin
-                            $display("[cpu        ] - T(%t) - IP(h%h) - MOVB", $time, IP);
-                            `AL <= mem[IP + 8 +: 8];
+                            $display("[cpu        ] - T(%t) - IP(h%h) - MOVB???", $time, IP);
+                            reg_file[mem[IP +: 2]] <= mem[IP + 8 +: 8];
                             IP <= IP + 16;
                         end
-                        `MOVW:
+                        `MOVW_PFX:
                         begin
-                            $display("[cpu        ] - T(%t) - IP(h%h) - MOVW", $time, IP);
-                            `AX <= {mem[IP + 16 +: 8], mem[IP + 8 +: 8]};
+                            $display("[cpu        ] - T(%t) - IP(h%h) - MOVW???", $time, IP);
+                            reg_file[mem[IP +: 2]] <= {mem[IP + 16 +: 8], mem[IP + 8 +: 8]};
                             IP <= IP + 24;
-                        end
-                        `HLT:
-                        begin
-                            $display("[cpu        ] - T(%t) - IP(h%h) - HLT", $time, IP);
-                            run_flg <= 0;
-                        end
-                        `IN:
-                        begin
-                            $display("[cpu        ] - T(%t) - IP(h%h) - IN", $time, IP);
-                            `AL <= data_in;
-                            IP <= IP + 8;
                         end
                         `INT: // software interrupt request
                         begin
@@ -162,11 +173,60 @@ module cpu(clk, reset, irq, mem, data_in, data_out);
                             {int_flg, C_flg, A_flg} <= ret_flgs;
                             IP <= ret_ptr;
                         end
+                        `LOOP:
+                        begin
+                            $display("[cpu        ] - T(%t) - IP(h%h) - LOOP(h%h)", $time, IP, `CX);
+                            `CX <= `CX - 1;
+                            IP <= `CX == 0 ? IP + 16 : IP + mem[IP + 8 +: 8] + 16;
+                        end
+                        `IN:
+                        begin
+                            $display("[cpu        ] - T(%t) - IP(h%h) - IN", $time, IP);
+                            `AL <= data_in;
+                            IP <= IP + 8;
+                        end
                         `OUT:
                         begin
                             $display("[cpu        ] - T(%t) - IP(h%h) - OUT", $time, IP);
                             data_out <= `AL;
                             IP <= IP + 8;
+                        end
+                        `HLT:
+                        begin
+                            $display("[cpu        ] - T(%t) - IP(h%h) - HLT", $time, IP);
+                            run_flg <= 0;
+                        end
+                        `MULB:
+                        begin
+                            $display("[cpu        ] - T(%t) - IP(h%h) - MULB", $time, IP);
+                            if (mem[IP + 14 +: 2] != 2'b11)
+                            begin
+                                $display("ERROR: invalid mode prefix (b%b)", mem[IP + 14 +: 2]);
+                                $stop;
+                            end
+                            if (mem[IP + 11 +: 3] != 3'b100)
+                            begin
+                                $display("ERROR: invalid mode (b%b)", mem[IP + 11 +: 3]);
+                                $stop;
+                            end
+                            `AL <= `AL * reg_file[mem[IP + 8 +: 3]][7:0];
+                            IP <= IP + 16;
+                        end
+                        `MULW:
+                        begin
+                            $display("[cpu        ] - T(%t) - IP(h%h) - MULW", $time, IP);
+                            if (mem[IP + 14 +: 2] != 2'b11)
+                            begin
+                                $display("ERROR: invalid mode prefix (b%b)", mem[IP + 14 +: 2]);
+                                $stop;
+                            end
+                            if (mem[IP + 11 +: 3] != 3'b100) // TODO: unsigned multiply only
+                            begin
+                                $display("ERROR: invalid mode (b%b)", mem[IP + 11 +: 3]);
+                                $stop;
+                            end
+                            {`DX,`AX} <= `AX * reg_file[mem[IP + 8 +: 3]];
+                            IP <= IP + 16;
                         end
                         default: // undefined instruction
                         begin
