@@ -177,7 +177,7 @@ module cpu(clk, reset, irq, mem, data_in, data_out);
                         begin
                             $display("[cpu        ] - T(%t) - IP(h%h) - LOOP(h%h)", $time, IP, `CX);
                             `CX <= `CX - 1;
-                            IP <= `CX == 0 ? IP + 16 : IP + mem[IP + 8 +: 8] + 16;
+                            IP <= `CX == 1 ? IP + 16 : IP + mem[IP + 8 +: 8] + 16;
                         end
                         `IN:
                         begin

@@ -46,24 +46,26 @@ module loop_cpu_tb;
         reset_val = 1'b0;
         
         // setup program
-        assign mem[`PROG_START + 000 +: 8] = `IN;                // read from data input channel into AL
-        assign mem[`PROG_START + 008 +: 8] = `CBW;               // fill AH with AL sign bit
-        assign mem[`PROG_START + 016 +: 8] = `MOVW | `CX_ID;     // move 16-bit immediate to CX
-        assign mem[`PROG_START + 024 +: 8] = 8'h06;              // 8-bit immediate (low-byte)
-        assign mem[`PROG_START + 032 +: 8] = 8'h00;              // 8-bit immediate (high-byte)
-        assign mem[`PROG_START + 040 +: 8] = `MOVW | `BX_ID;     // move 16-bit immediate to BX
-        assign mem[`PROG_START + 048 +: 8] = 8'h02;              // 8-bit immediate (low-byte)
-        assign mem[`PROG_START + 056 +: 8] = 8'h00;              // 8-bit immediate (high-byte)
-        assign mem[`PROG_START + 064 +: 8] = `MULW;              // multiply (word)
-        assign mem[`PROG_START + 072 +: 8] = {5'b11100, `BX_ID}; // DX,AX <= AX * BX
-        assign mem[`PROG_START + 080 +: 8] = `LOOP;              // loop
-        assign mem[`PROG_START + 088 +: 8] = -32;                // back to MULW
-        assign mem[`PROG_START + 096 +: 8] = `OUT;               // write AL to data output channel
-        assign mem[`PROG_START + 104 +: 8] = 0;                  // raise an UII
+        assign mem[`PROG_START + 000 +: 8] = `IN;                       // read from data input channel into AL
+        assign mem[`PROG_START + 008 +: 8] = `CBW;                      // fill AH with AL sign bit
+        assign mem[`PROG_START + 016 +: 8] = `MOVRW;                    // move register-to-register (word)
+        assign mem[`PROG_START + 024 +: 8] = {2'b11, `AX_ID, `CX_ID};   // CX <= AX
+        assign mem[`PROG_START + 032 +: 8] = `MOVW | `AX_ID;            // move 16-bit immediate to CX
+        assign mem[`PROG_START + 040 +: 8] = 8'h01;                     // 8-bit immediate (low-byte)
+        assign mem[`PROG_START + 048 +: 8] = 8'h00;                     // 8-bit immediate (high-byte)
+        assign mem[`PROG_START + 056 +: 8] = `MOVW | `BX_ID;            // move 16-bit immediate to BX
+        assign mem[`PROG_START + 064 +: 8] = 8'h02;                     // 8-bit immediate (low-byte)
+        assign mem[`PROG_START + 072 +: 8] = 8'h00;                     // 8-bit immediate (high-byte)
+        assign mem[`PROG_START + 080 +: 8] = `MULW;                     // multiply (word)
+        assign mem[`PROG_START + 088 +: 8] = {5'b11100, `BX_ID};        // DX,AX <= AX * BX
+        assign mem[`PROG_START + 096 +: 8] = `LOOP;                     // loop
+        assign mem[`PROG_START + 104 +: 8] = -32;                       // back to MULW
+        assign mem[`PROG_START + 112 +: 8] = `OUT;                      // write AL to data output channel
+        assign mem[`PROG_START + 120 +: 8] = 0;                         // raise an UII
 
-        assign data_in = 8'h01; // set data input channel
+        assign data_in = 8'h07; // set data input channel
 
-        #44; // run for 22 cycles
+        #48; // run for 24 cycles
 
         // query data output channel
         $display("[cpu_tb     ] - T(%t) - data_out(h%h), expected(h%h)", $time, data_out, 8'h80);
