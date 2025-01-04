@@ -4,10 +4,10 @@
 // testbed for IN/OUT and IRQ
 module in_out_irq_cpu_tb;
     reg clk_val, reset_val;
-    reg [7:0] irq_val;
+    reg[7:0] irq_val;
     wire clk, reset;
-    wire [7:0] irq;
-    reg[255:0] mem;
+    wire[7:0] irq;
+    reg[2047:0] mem;
     reg[7:0] data_in;
     wire[7:0] data_out;
 
@@ -33,6 +33,8 @@ module in_out_irq_cpu_tb;
         .data_out(data_out)
     );
         
+    `include "asm.vh"
+
     initial
     begin        
         // setup handlers
@@ -50,11 +52,12 @@ module in_out_irq_cpu_tb;
 
         // set reset low
         reset_val = 1'b0;
-        
+
         // setup program
-        assign mem[`PROG_START + 00 +: 8] = `IN;    // read data input channel into AL
-        assign mem[`PROG_START + 08 +: 8] = `OUT;   // write AL to data output channel
-        assign mem[`PROG_START + 16 +: 8] = 0;      // raise an UII
+        ORG(`PROG_START);
+        IN;                 // read data input channel into AL
+        OUT;                // write AL to data output channel
+        UII;                // raise an UII
 
         assign data_in = 8'h2A; // set data input channel
 
@@ -62,7 +65,7 @@ module in_out_irq_cpu_tb;
 
         #2 irq_val = 16'h0000; // run for 1 cycle and clear IRQ channel
 
-        #8; // run for 4 cycles
+        #8; // run for 4 more cycles
 
         // query data output channel
         $display("[cpu_tb     ] - T(%t) - data_out(h%h), expected(h%h)", $time, data_out, 8'h2A);

@@ -5,7 +5,7 @@
 module loop_cpu_tb;
     reg clk_val, reset_val;
     wire clk, reset;
-    reg[255:0] mem;
+    reg[2047:0] mem;
     reg[7:0] data_in;
     wire[7:0] data_out;
 
@@ -27,7 +27,11 @@ module loop_cpu_tb;
         .data_in(data_in),
         .data_out(data_out)
     );
+
+    `include "asm.vh"
         
+    integer FLoop;
+    
     initial
     begin        
         // setup handlers
@@ -44,32 +48,27 @@ module loop_cpu_tb;
 
         // set reset low
         reset_val = 1'b0;
-        
-        // setup program
-        assign mem[`PROG_START + 000 +: 8] = `IN;                       // read from data input channel into AL
-        assign mem[`PROG_START + 008 +: 8] = `CBW;                      // fill AH with AL sign bit
-        assign mem[`PROG_START + 016 +: 8] = `MOVRW;                    // move register-to-register (word)
-        assign mem[`PROG_START + 024 +: 8] = {2'b11, `AX_ID, `CX_ID};   // CX <= AX
-        assign mem[`PROG_START + 032 +: 8] = `MOVW | `AX_ID;            // move 16-bit immediate to CX
-        assign mem[`PROG_START + 040 +: 8] = 8'h01;                     // 8-bit immediate (low-byte)
-        assign mem[`PROG_START + 048 +: 8] = 8'h00;                     // 8-bit immediate (high-byte)
-        assign mem[`PROG_START + 056 +: 8] = `MOVW | `BX_ID;            // move 16-bit immediate to BX
-        assign mem[`PROG_START + 064 +: 8] = 8'h02;                     // 8-bit immediate (low-byte)
-        assign mem[`PROG_START + 072 +: 8] = 8'h00;                     // 8-bit immediate (high-byte)
-        assign mem[`PROG_START + 080 +: 8] = `MULW;                     // multiply (word)
-        assign mem[`PROG_START + 088 +: 8] = {5'b11100, `BX_ID};        // DX,AX <= AX * BX
-        assign mem[`PROG_START + 096 +: 8] = `LOOP;                     // loop
-        assign mem[`PROG_START + 104 +: 8] = -32;                       // back to MULW
-        assign mem[`PROG_START + 112 +: 8] = `OUT;                      // write AL to data output channel
-        assign mem[`PROG_START + 120 +: 8] = 0;                         // raise an UII
 
-        assign data_in = 8'h07; // set data input channel
+        // setup program
+        ORG(`PROG_START);
+        IN;                         // read from data input channel into AL
+        CBW;                        // fill AH with AL sign bit
+        MOVR(CX, AX);               // CX <= AX
+        MOV(AX, 'h01);              // move b01 to AX
+        MOV(BX, 'h02);              // move h02 to BX
+        FLoop `LABEL;               // FLoop
+        MUL(BX);                    // DX,AX <= AX * BX
+        LOOP(FLoop);                // decrement CX and loop to FLoop while not zero
+        OUT;                        // write AL to data output channel
+        UII;                        // raise an UII
+
+        assign data_in = 'h07; // set data input channel
 
         #48; // run for 24 cycles
 
         // query data output channel
         $display("[cpu_tb     ] - T(%t) - data_out(h%h), expected(h%h)", $time, data_out, 8'h80);
-        if (data_out != 8'h80) 
+        if (data_out != 'h80) 
         begin
             $stop;
         end

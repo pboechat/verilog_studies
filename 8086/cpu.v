@@ -4,7 +4,7 @@ module cpu(clk, reset, irq, mem, data_in, data_out);
     input wire clk;
     input wire reset;
     input wire[7:0] irq;
-    input wire [255:0] mem;
+    input wire [2047:0] mem;
     input wire [7:0] data_in;
     output reg [7:0] data_out;
 
@@ -14,7 +14,8 @@ module cpu(clk, reset, irq, mem, data_in, data_out);
     reg A_flg;                  // aux carry flag
     reg[7:0] ret_ptr;           // return pointer
     reg[2:0] ret_flgs;          // {int_flg,C_flg,A_flg}
-    reg[7:0] IP;                // instruction pointer
+    // FIXME: when memory is fixed, set IP back to 8-bits 
+    reg[15:0] IP;                // instruction pointer
     reg[15:0] reg_file[0:31];   // register file
 
     always@(posedge(clk))
@@ -177,7 +178,7 @@ module cpu(clk, reset, irq, mem, data_in, data_out);
                         begin
                             $display("[cpu        ] - T(%t) - IP(h%h) - LOOP(h%h)", $time, IP, `CX);
                             `CX <= `CX - 1;
-                            IP <= `CX == 1 ? IP + 16 : IP + mem[IP + 8 +: 8] + 16;
+                            IP <= `CX == 1 ? IP + 24 : IP + {mem[IP + 16 +: 8], mem[IP + 8 +: 8]} + 24;
                         end
                         `IN:
                         begin
